@@ -11,7 +11,7 @@ from app.sub_agents.excel_agent import excel_agent
 def test_research_agent_config():
     assert research_agent.name == "research_agent"
     assert "Researches sparse product data" in research_agent.description
-    assert len(research_agent.tools) == 3
+    assert len(research_agent.tools) == 2
 
 
 def test_search_product_catalog():

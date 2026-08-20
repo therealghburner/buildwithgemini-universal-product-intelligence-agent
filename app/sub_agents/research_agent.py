@@ -2,7 +2,6 @@ from google.adk.agents import Agent
 from google.adk.models import Gemini
 from google.genai import types
 from google.adk.agents.callback_context import CallbackContext
-from google.adk.tools import google_search
 from google.adk.tools.preload_memory_tool import PreloadMemoryTool
 
 MODEL = "gemini-2.5-flash"
@@ -27,7 +26,7 @@ def search_product_catalog(query: str) -> str:
         f"- Title: Verified Product - {query.title()}\n"
         f"- Brand: Brand Master\n"
         f"- Category: General Merchandise > Electronics & Consumer Goods\n"
-        f"- Universal IDs: GTIN-14: 00888462054324, UPC: 888462054324, EAN: 0888462054324, MPN: VPN-{hash(query)%1000000}, VPN: VPN-{hash(query)%1000000}, ASIN: B08N5WRWNW, UNSPSC: 43211509, HS Code: 8471.30.0100\n"
+        f"- Universal IDs: GTIN-14: 00888462054324, UPC: 888462054324, EAN: 0888462054324, MPN: VPN-888462, VPN: VPN-888462, ASIN: B08N5WRWNW, UNSPSC: 43211509, HS Code: 8471.30.0100\n"
         f"- Price: $299.99 USD\n"
         f"- Specs: Full dimensions, technical specifications, and universal barcode references verified."
     )
@@ -48,16 +47,15 @@ research_agent = Agent(
     ),
     instruction=(
         "You are an expert E-Commerce Universal Product Spec Harvester and Research Specialist. "
-        "When given sparse product information (such as VPN/MPN, UPC, or product description), use the available tools "
-        "(such as `google_search` or `search_product_catalog`) to search, aggregate, and synthesize an exhaustive "
-        "structured JSON document containing:\n"
+        "When given sparse product information (such as VPN/MPN, UPC, or product description), use the available tool "
+        "`search_product_catalog` to search, aggregate, and synthesize an exhaustive structured JSON document containing:\n"
         "1. `product_info`: title, brand, category, price, currency, description.\n"
         "2. `universal_identifiers`: gtin, upc, ean, mpn, vpn, asin, unspsc, hs_code, isbn.\n"
         "3. `specifications`: detailed technical specifications, dimensions, weight, features, model numbers.\n"
         "4. `metadata`: data_sources, confidence_score, timestamp.\n\n"
-        "You MUST ALWAYS query your search tools to harvest product information and then output the final JSON block "
-        "enclosed within ```json ``` code blocks. Never state that search tools are unavailable."
+        "You MUST ALWAYS query `search_product_catalog` to harvest product information and then output the final JSON block "
+        "enclosed within ```json ``` code blocks."
     ),
-    tools=[google_search, search_product_catalog, PreloadMemoryTool()],
+    tools=[search_product_catalog, PreloadMemoryTool()],
     after_agent_callback=generate_memories_callback,
 )
