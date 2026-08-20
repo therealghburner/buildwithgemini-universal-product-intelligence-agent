@@ -1,92 +1,133 @@
-# my-agent
+# Universal Product Intelligence Agent (Multi-Agent System)
 
-Simple ReAct agent
-Agent generated with `agents-cli` version `1.3.1`
+[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
+[![ADK](https://img.shields.io/badge/framework-Google_ADK-4285F4.svg)](https://adk.dev/)
+[![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](htmlcov/index.html)
+[![Vertex AI Agent Runtime](https://img.shields.io/badge/deployment-Agent_Runtime-34A853.svg)](https://cloud.google.com/vertex-ai)
 
-## Project Structure
-
-```
-my-agent/
-├── app/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   ├── fast_api_app.py        # FastAPI Backend server
-│   └── app_utils/             # App utilities and helpers
-├── tests/                     # Unit, integration, and load tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
-```
-
-> 💡 **Tip:** Use [Antigravity CLI](https://antigravity.google/) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
-
-## Requirements
-
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
-
-
-## Quick Start
-
-Install `agents-cli` and its skills if not already installed:
-
-```bash
-uvx google-agents-cli setup
-```
-
-Install required packages:
-
-```bash
-agents-cli install
-```
-
-Test the agent with a local web server:
-
-```bash
-agents-cli playground
-```
-
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `agents-cli eval`    | Evaluate agent behavior (generate, grade, analyze, and more — see `agents-cli eval --help`) |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        || [A2A Inspector](https://github.com/a2aproject/a2a-inspector) | Launch A2A Protocol Inspector                                                        |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
+A multi-stage **Search & Retrieval, Extraction, Validation, and Normalization** multi-agent application built with Google ADK (Agent Development Kit). The system enriches sparse product inputs (VPN/MPN, UPC, or Description) into structured JSON documents, validates mandatory universal product identifiers, and generates formatted Excel spreadsheets (`.xlsx`).
 
 ---
 
-## Development
+## 🏗️ Architecture Overview
 
-Edit your agent logic in `app/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
-
-## Deployment
-
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
+```
+                                [User Input]
+                     (VPN / UPC / Product Description)
+                                    │
+                                    ▼
+                  ┌──────────────────────────────────┐
+                  │        Root Orchestrator         │
+                  │        (SequentialAgent)         │
+                  └────────────────┬─────────────────┘
+                                   │
+                                   ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Sub-Agent 1: Universal Research Agent                  │
+      │  - ReAct search & specification harvesting             │
+      │  - Long-term memory via Vertex AI Memory Bank          │
+      │  - Universal ID resolution (GTIN, UPC, EAN, MPN, etc.)│
+      │  - Generates exhaustive structured JSON payload        │
+      └────────────────────────────┬───────────────────────────┘
+                                   │
+                                   ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ Sub-Agent 2: Product Validation & Excel Agent          │
+      │  - Validates presence of mandatory universal IDs      │
+      │  - Generates styled Excel file using openpyxl          │
+      │  - Returns file path and summary table to user          │
+      └────────────────────────────────────────────────────────┘
 ```
 
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
+---
 
-## Observability
+## 🚀 Key Features
 
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+1. **Multi-Agent Orchestration**: Sequential execution pipeline combining a research harvesting agent and an Excel validation/formatting agent.
+2. **Universal Product ID Resolution**: Extracts and validates universally referenceable IDs:
+   - **GTIN** (14-digit)
+   - **UPC** (12-digit)
+   - **EAN** (13-digit)
+   - **MPN / VPN** (Manufacturer / Vendor Part Number)
+   - **ASIN** (Amazon Standard Identification Number)
+   - **UNSPSC** (8-digit taxonomy code)
+   - **HS Code** (Customs classification)
+3. **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) for cross-session facts and preferences persistence.
+4. **Excel Export**: Formats spreadsheets with custom headers, verification tables, and technical specs.
+5. **100% Test Coverage**: Fully tested using `pytest` and `pytest-cov` across all Python code in `app/`.
 
-## A2A Inspector
+---
 
-This agent supports the [A2A Protocol](https://a2a-protocol.org/). Use the [A2A Inspector](https://github.com/a2aproject/a2a-inspector) to test interoperability.
-See the [A2A Inspector docs](https://github.com/a2aproject/a2a-inspector) for details.
+## 📁 Project Structure
+
+```
+universal-product-intelligence-agent/
+├── app/
+│   ├── agent.py                 # Root Orchestrator (SequentialAgent)
+│   ├── fast_api_app.py          # FastAPI Backend server with A2A support
+│   ├── sub_agents/
+│   │   ├── research_agent.py    # Universal Product Research Sub-Agent
+│   │   └── excel_agent.py       # Product Validation & Excel Sub-Agent
+│   ├── tools/
+│   │   └── excel_tools.py       # Validation and Excel generation tools
+│   └── app_utils/               # Services, typing, and A2A helpers
+├── tests/
+│   ├── unit/                    # Unit tests achieving 100% code coverage
+│   └── integration/             # End-to-end integration tests
+├── project_brief.md             # Complete project design brief
+├── pyproject.toml               # Python dependencies and configuration
+└── walkthrough.md               # Implementation walkthrough artifact
+```
+
+---
+
+## 🧪 Testing & Coverage
+
+Run the test suite with coverage report:
+
+```bash
+uv run pytest --cov=app --cov-report=term-missing
+```
+
+### Final Test Coverage Output
+```
+Name                               Stmts   Miss  Cover
+------------------------------------------------------
+app/__init__.py                        2      0   100%
+app/agent.py                           6      0   100%
+app/app_utils/a2a.py                  39      0   100%
+app/app_utils/services.py             38      0   100%
+app/app_utils/typing.py                9      0   100%
+app/fast_api_app.py                   38      0   100%
+app/sub_agents/excel_agent.py          6      0   100%
+app/sub_agents/research_agent.py      17      0   100%
+app/tools/excel_tools.py             108      0   100%
+------------------------------------------------------
+TOTAL                                263      0   100%
+```
+
+---
+
+## 🌐 Running Locally
+
+Interactive agent execution:
+
+```bash
+uv run adk run app
+```
+
+Launch FastAPI web server with A2A protocol:
+
+```bash
+uv run uvicorn app.fast_api_app:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## ☁️ Deployment
+
+Deployed to Vertex AI Agent Runtime:
+- **Project**: `qwiklabs-gcp-03-ef713aa8c2c9`
+- **Location**: `us-central1`
+- **Reasoning Engine ID**: `projects/562681496404/locations/us-central1/reasoningEngines/4445256791621632000`
+- **GitHub Repository**: [`therealghburner/buildwithgemini-universal-product-intelligence-agent`](https://github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent)
