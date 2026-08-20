@@ -20,7 +20,8 @@ def get_current_time(query: str) -> str:
 
 
 async def generate_memories_callback(callback_context: CallbackContext):
-    await callback_context.add_session_to_memory()
+    if getattr(callback_context, "memory_service", None) is not None:
+        await callback_context.add_session_to_memory()
     return None
 
 
