@@ -14,13 +14,27 @@ def test_research_agent_config():
     assert len(research_agent.tools) == 2
 
 
-def test_search_product_catalog():
+def test_search_product_catalog_domains():
+    # Test Footwear / Boot domain
+    res_boot = search_product_catalog("Tecovas The Dean Western Boot")
+    assert "Tecovas" in res_boot
+    assert "Western Boots" in res_boot
+    assert "Calfskin Leather" in res_boot
+    assert "6403.51.1110" in res_boot
+
+    # Test Fragrance domain
     res_coco = search_product_catalog("COCO MADEMOISELLE CRUSH ABSOLU")
     assert "CHANEL" in res_coco
     assert "3145891165203" in res_coco
 
-    res_gen = search_product_catalog("Generic Phone")
-    assert "Brand Master" in res_gen
+    # Test Electronics domain
+    res_tech = search_product_catalog("Laptop Computer")
+    assert "Electronics & Consumer Goods" in res_tech
+    assert "128GB" in res_tech
+
+    # Test General fallback domain
+    res_gen = search_product_catalog("Ceramic Coffee Mug")
+    assert "General Merchandise" in res_gen
 
 
 @pytest.mark.asyncio
