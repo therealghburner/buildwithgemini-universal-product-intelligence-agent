@@ -8,27 +8,39 @@ MODEL = "gemini-2.5-flash"
 
 
 def search_product_catalog(query: str) -> str:
-    """Searches global e-commerce databases, barcode registries, and product catalog indexes for GTIN, UPC, EAN, MPN, ASIN, and detailed specs."""
+    """Searches global e-commerce databases, barcode registries, and product catalog indexes for multi-SKU product families, GTINs, UPCs, EANs, MPNs, ASINs, and detailed attributes."""
     q_lower = query.lower()
     if "coco" in q_lower or "mademoiselle" in q_lower or "perfume" in q_lower or "fragrance" in q_lower:
         return (
-            "Found product catalog entry for CHANEL COCO MADEMOISELLE CRUSH ABSOLU Eau de Parfum Spray:\n"
-            "- Title: CHANEL COCO MADEMOISELLE CRUSH ABSOLU Eau de Parfum Spray 100ml / 3.4 oz\n"
+            "Found multi-SKU product family entry for CHANEL COCO MADEMOISELLE CRUSH ABSOLU Eau de Parfum Spray:\n"
+            "- Product Family: CHANEL COCO MADEMOISELLE CRUSH ABSOLU Eau de Parfum Spray\n"
             "- Brand: CHANEL\n"
             "- Category: Beauty & Personal Care > Fragrances > Eau de Parfum\n"
-            "- Universal IDs: GTIN-14: 03145891165203, UPC: 3145891165203, EAN: 3145891165203, MPN: 116520, VPN: CHA-116520, ASIN: B00116520X, UNSPSC: 53131621, HS Code: 3303.00.1000\n"
-            "- Price: $165.00 USD\n"
-            "- Specs: Volume: 100ml / 3.4 fl oz; Fragrance Family: Floral Amber / Oriental; Top Notes: Orange, Bergamot; Heart Notes: Rose, Jasmine; Base Notes: Patchouli, Vetiver, Vanilla, White Musk.\n"
-            "- Description: An intense, sensual floral amber fragrance formulation presented in an elegant spray bottle."
+            "- Metadata: Confidence Score: 0.98, Timestamp: 2026-08-20T23:38:00Z, Data Sources: ['CHANEL Official Catalog', 'Global Barcode Registry', 'E-Commerce Index']\n"
+            "- SKUs:\n"
+            "  1. SKU ID: CHA-116510-50ML, Variant: 50ml / 1.7 fl oz Spray, Price: $125.00 USD\n"
+            "     Universal IDs: GTIN-14: 03145891165104, UPC: 3145891165104, EAN: 3145891165104, MPN: 116510, VPN: CHA-116510, ASIN: B00116510Y, UNSPSC: 53131621, HS Code: 3303.00.1000\n"
+            "     Attributes: Volume: 50ml / 1.7 oz, Fragrance Family: Oriental Amber, Top Notes: Orange, Bergamot\n"
+            "  2. SKU ID: CHA-116520-100ML, Variant: 100ml / 3.4 fl oz Spray, Price: $165.00 USD\n"
+            "     Universal IDs: GTIN-14: 03145891165203, UPC: 3145891165203, EAN: 3145891165203, MPN: 116520, VPN: CHA-116520, ASIN: B00116520X, UNSPSC: 53131621, HS Code: 3303.00.1000\n"
+            "     Attributes: Volume: 100ml / 3.4 oz, Fragrance Family: Oriental Amber, Top Notes: Orange, Bergamot\n"
+            "  3. SKU ID: CHA-116530-200ML, Variant: 200ml / 6.8 fl oz Spray, Price: $245.00 USD\n"
+            "     Universal IDs: GTIN-14: 03145891165302, UPC: 3145891165302, EAN: 3145891165302, MPN: 116530, VPN: CHA-116530, ASIN: B00116530Z, UNSPSC: 53131621, HS Code: 3303.00.1000\n"
+            "     Attributes: Volume: 200ml / 6.8 oz, Fragrance Family: Oriental Amber, Top Notes: Orange, Bergamot"
         )
     return (
         f"Product catalog search results for '{query}':\n"
-        f"- Title: Verified Product - {query.title()}\n"
+        f"- Product Family: {query.title()} Family\n"
         f"- Brand: Brand Master\n"
         f"- Category: General Merchandise > Electronics & Consumer Goods\n"
-        f"- Universal IDs: GTIN-14: 00888462054324, UPC: 888462054324, EAN: 0888462054324, MPN: VPN-888462, VPN: VPN-888462, ASIN: B08N5WRWNW, UNSPSC: 43211509, HS Code: 8471.30.0100\n"
-        f"- Price: $299.99 USD\n"
-        f"- Specs: Full dimensions, technical specifications, and universal barcode references verified."
+        f"- Metadata: Confidence Score: 0.95, Timestamp: 2026-08-20T23:38:00Z, Data Sources: ['Global Product Index']\n"
+        f"- SKUs:\n"
+        f"  1. SKU ID: SKU-101, Variant: Standard Edition, Price: $299.99 USD\n"
+        f"     Universal IDs: GTIN-14: 00888462054324, UPC: 888462054324, EAN: 0888462054324, MPN: VPN-888462, VPN: VPN-888462, ASIN: B08N5WRWNW, UNSPSC: 43211509, HS Code: 8471.30.0100\n"
+        f"     Attributes: Color: Space Gray, Capacity: 128GB\n"
+        f"  2. SKU ID: SKU-102, Variant: Pro Edition, Price: $399.99 USD\n"
+        f"     Universal IDs: GTIN-14: 00888462054331, UPC: 888462054331, EAN: 0888462054331, MPN: VPN-888463, VPN: VPN-888463, ASIN: B08N5WRXOX, UNSPSC: 43211509, HS Code: 8471.30.0100\n"
+        f"     Attributes: Color: Silver, Capacity: 256GB"
     )
 
 
@@ -40,20 +52,27 @@ async def generate_memories_callback(callback_context: CallbackContext):
 
 research_agent = Agent(
     name="research_agent",
-    description="Researches sparse product data (VPN, UPC, or description) across web databases and generates an exhaustive structured JSON product specification document with universal identifiers (GTIN, UPC, EAN, MPN, ASIN, UNSPSC, HS Code).",
+    description="Researches sparse product data (VPN, UPC, or description) across web databases and generates an exhaustive structured JSON product specification document with a tree structure traversing all SKUs, their respective IDs, attributes, and metadata.",
     model=Gemini(
         model=MODEL,
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
     instruction=(
         "You are an expert E-Commerce Universal Product Spec Harvester and Research Specialist. "
-        "When given sparse product information (such as VPN/MPN, UPC, or product description), use the available tool "
-        "`search_product_catalog` to search, aggregate, and synthesize an exhaustive structured JSON document containing:\n"
-        "1. `product_info`: title, brand, category, price, currency, description.\n"
-        "2. `universal_identifiers`: gtin, upc, ean, mpn, vpn, asin, unspsc, hs_code, isbn.\n"
-        "3. `specifications`: detailed technical specifications, dimensions, weight, features, model numbers.\n"
-        "4. `metadata`: data_sources, confidence_score, timestamp.\n\n"
-        "You MUST ALWAYS query `search_product_catalog` to harvest product information and then output the final JSON block "
+        "When given sparse product information (such as VPN/MPN, UPC, or product description), use `search_product_catalog` "
+        "to traverse all SKUs and product variants. Synthesize a structured JSON document with a tree structure containing:\n"
+        "1. `product_family`: Title or product family name.\n"
+        "2. `brand`: Brand or manufacturer name.\n"
+        "3. `category`: Taxonomy or e-commerce category.\n"
+        "4. `skus`: A JSON array containing entries for ALL discovered SKUs/variants. Each SKU entry must include:\n"
+        "   - `sku_id`: Unique SKU or SKU code.\n"
+        "   - `variant_name`: Variant title or specification label.\n"
+        "   - `price`: Numerical or formatted price.\n"
+        "   - `currency`: Currency code (e.g. USD).\n"
+        "   - `universal_identifiers`: Object containing `gtin`, `upc`, `ean`, `mpn`, `vpn`, `asin`, `unspsc`, `hs_code`.\n"
+        "   - `attributes`: Key-value map of technical specifications (volume, color, capacity, dimensions, etc.).\n"
+        "5. `metadata`: Object containing `confidence_score` (float 0.0 - 1.0), `timestamp` (ISO string), and `data_sources` (list of strings).\n\n"
+        "You MUST ALWAYS query `search_product_catalog` to harvest product information and output the final JSON block "
         "enclosed within ```json ``` code blocks."
     ),
     tools=[search_product_catalog, PreloadMemoryTool()],

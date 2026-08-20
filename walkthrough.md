@@ -1,31 +1,79 @@
-# Walkthrough: Multi-Agent Product Intelligence & Excel Converter
+# Multi-SKU Tree Harvester & Multi-Line Excel Pipeline Walkthrough
 
-We expanded the `universal-product-intelligence-agent` into a **Multi-Agent System** comprising a **Research Sub-Agent**, a **Validation & Excel Sub-Agent**, and a **Root Orchestrator Agent**.
+## Summary
+Upgraded the Universal Product Intelligence Agent to support **Multi-SKU tree structures**, allowing product descriptions or VPNs with multiple product variants (sizes, volumes, colors, configurations) to be parsed into a tree-structured JSON document. The Excel creation tool generates a **multi-line spreadsheet** with every SKU on a dedicated row while retaining metadata (confidence score, timestamp, data sources) and mandatory ID validation.
 
-## System Components
+---
 
-### 1. Research Harvester Sub-Agent ([`app/sub_agents/research_agent.py`](file:///config/Desktop/BuildWithGemini/universal-product-intelligence-agent/app/sub_agents/research_agent.py))
-- Scours product data from sparse user inputs (VPN, UPC, or description).
-- Resolves universal product identifiers (GTIN, UPC, EAN, MPN, ASIN, UNSPSC, HS Code).
-- Generates exhaustive structured JSON product specification documents.
+## 1. Multi-SKU Tree JSON Structure
 
-### 2. Validation & Excel Sub-Agent ([`app/sub_agents/excel_agent.py`](file:///config/Desktop/BuildWithGemini/universal-product-intelligence-agent/app/sub_agents/excel_agent.py))
-- Uses [`app/tools/excel_tools.py`](file:///config/Desktop/BuildWithGemini/universal-product-intelligence-agent/app/tools/excel_tools.py) to parse and validate product specifications.
-- Validates mandatory fields and universal product identifiers.
-- Generates formatted, styled `.xlsx` Excel spreadsheets with custom headers, identifier verification status, and attribute tables.
+```json
+{
+  "product_family": "CHANEL COCO MADEMOISELLE CRUSH ABSOLU Eau de Parfum Spray",
+  "brand": "CHANEL",
+  "category": "Beauty & Personal Care > Fragrances > Eau de Parfum",
+  "skus": [
+    {
+      "sku_id": "CHA-116510-50ML",
+      "variant_name": "50ml / 1.7 fl oz Spray",
+      "price": "$125.00",
+      "currency": "USD",
+      "universal_identifiers": {
+        "gtin": "03145891165104",
+        "upc": "3145891165104",
+        "ean": "3145891165104",
+        "mpn": "116510",
+        "vpn": "CHA-116510",
+        "asin": "B00116510Y",
+        "unspsc": "53131621",
+        "hs_code": "3303.00.1000"
+      },
+      "attributes": {
+        "volume": "50ml / 1.7 oz",
+        "fragrance_family": "Oriental Amber"
+      }
+    },
+    {
+      "sku_id": "CHA-116520-100ML",
+      "variant_name": "100ml / 3.4 fl oz Spray",
+      "price": "$165.00",
+      "currency": "USD",
+      "universal_identifiers": {
+        "gtin": "03145891165203",
+        "upc": "3145891165203",
+        "ean": "3145891165203",
+        "mpn": "116520",
+        "vpn": "CHA-116520",
+        "asin": "B00116520X",
+        "unspsc": "53131621",
+        "hs_code": "3303.00.1000"
+      },
+      "attributes": {
+        "volume": "100ml / 3.4 oz",
+        "fragrance_family": "Oriental Amber"
+      }
+    }
+  ],
+  "metadata": {
+    "confidence_score": 0.98,
+    "timestamp": "2026-08-20T23:38:00Z",
+    "data_sources": ["CHANEL Official Catalog", "Global Barcode Registry"]
+  }
+}
+```
 
-### 3. Root Orchestrator Agent ([`app/agent.py`](file:///config/Desktop/BuildWithGemini/universal-product-intelligence-agent/app/agent.py))
-- Executes a `SequentialAgent` pipeline:
-  1. Invokes `research_agent` to extract product attributes and produce the JSON specification.
-  2. Invokes `excel_agent` to validate product IDs and generate the Excel output document.
-  3. Returns the Excel file output path and summary back to the user.
+---
 
-## End-to-End Test Verification
-- Tested locally with `uv run adk run app`:
-  - **Input Prompt**: `"Research product UPC 887276432101 (Samsung Galaxy S24 Ultra)..."`
-  - **Output Excel File**: [`output/Samsung_Galaxy_S24_Ultra_spec.xlsx`](file:///config/Desktop/BuildWithGemini/universal-product-intelligence-agent/output/Samsung_Galaxy_S24_Ultra_spec.xlsx)
-  - **Validation Result**: Success (GTIN, UPC, EAN, MPN, VPN verified).
+## 2. Multi-Line Excel Spreadsheet Format
 
-## GitHub Repository
-- **URL**: [github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent](https://github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent)
-- Updated with all multi-agent modules and Excel generation tools.
+The generated `.xlsx` output includes:
+- **Title & Overview Block**: Displays Product Family, Brand, Category, Confidence Score, Timestamp, and Data Sources.
+- **Multi-Line SKU Table**: Contains columns for `SKU ID`, `Variant Name`, `Price`, `GTIN-14`, `UPC-12`, `EAN-13`, `MPN`, `VPN`, `ASIN`, `UNSPSC`, `HS Code`, `Attributes & Specifications`, and `Status`.
+
+---
+
+## 3. 100% Test Coverage Pass
+
+Ran `pytest --cov=app --cov-report=term-missing`:
+- **Results**: 29 passed, 0 failed
+- **Coverage**: **100%** (256/256 statements covered in `app/`)

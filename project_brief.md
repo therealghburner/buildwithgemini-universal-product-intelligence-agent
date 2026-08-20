@@ -1,7 +1,7 @@
-# Project Brief: Universal Product Intelligence Agent (Product Spec Harvester & Excel Validator)
+# Project Brief: Universal Product Intelligence Agent (Multi-SKU Tree Harvester & Multi-Line Excel Validator)
 
 ## Overview
-A multi-agent **Search & Retrieval, Extraction, Validation, and Normalization** system built with the Google Agent Development Kit (ADK). The system receives sparse inputs (VPN/MPN, UPC, or product description), scours online databases and web sources, generates an exhaustive structured JSON document with universal product identifiers, validates mandatory product IDs, and automatically populates a formatted Excel spreadsheet (`.xlsx`) output.
+A multi-agent **Search & Retrieval, Extraction, Validation, and Normalization** system built with the Google Agent Development Kit (ADK). The system receives sparse inputs (VPN/MPN, UPC, or product description), scours online databases and web sources, generates an exhaustive structured JSON document with a tree structure traversing all discovered product SKUs/variants, validates mandatory product IDs across all SKUs, retains metadata (confidence scores, timestamps, data sources), and automatically populates a styled multi-line Excel spreadsheet (`.xlsx`) output.
 
 ---
 
@@ -20,46 +20,38 @@ A multi-agent **Search & Retrieval, Extraction, Validation, and Normalization** 
                                     ▼
        ┌────────────────────────────────────────────────────────┐
        │ Step 1: Universal Research Agent                       │
-       │  - ReAct search & specification harvesting              │
+       │  - ReAct search & multi-SKU family harvesting           │
        │  - Cross-session memory via Vertex AI Memory Bank      │
-       │  - Universal ID resolution (GTIN, UPC, EAN, MPN, etc.) │
-       │  - Outputs exhaustive structured JSON product specs   │
+       │  - Universal ID resolution per SKU (GTIN, UPC, EAN,    │
+       │    MPN, VPN, ASIN, UNSPSC, HS Code)                    │
+       │  - Outputs tree-structured JSON (family + SKUs array) │
        └────────────────────────────┬───────────────────────────┘
                                     │
                                     ▼
        ┌────────────────────────────────────────────────────────┐
-       │ Step 2: Validation & Excel Agent                       │
-       │  - Validates presence of mandatory universal IDs       │
-       │  - Sanitizes and structures JSON payload             │
-       │  - Generates styled Excel spreadsheet (.xlsx)          │
-       │  - Returns file path and summary to user               │
+       │ Step 2: Product Validation & Excel Agent               │
+       │  - Validates presence of mandatory IDs for all SKUs    │
+       │  - Retains confidence scores, timestamps & metadata    │
+       │  - Generates styled multi-line Excel file (.xlsx)      │
+       │  - Returns file path and summary table to user         │
        └────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Key Capabilities & Tool Coverage
+## 2. Key Capabilities & Multi-SKU Features
 
-- **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) to retain search history, saved product catalogs, and user preferences across sessions.
-- **Universal ID Resolution**: Identifies and verifies universally referenceable product IDs:
-  - **GTIN** (14-digit)
-  - **UPC** (12-digit)
-  - **EAN** (13-digit)
-  - **MPN / VPN** (Manufacturer / Vendor Part Number)
-  - **ASIN** (Amazon Standard Identification Number)
-  - **UNSPSC** (8-digit taxonomy code)
-  - **HS Code** (Customs & International Trade classification)
-- **Validation & Excel Generation**:
-  - Validates mandatory IDs in harvested product data.
-  - Formats output spreadsheets using `openpyxl` with custom styling (dark headers, verification status tables, formatted specs).
-- **100% Test Coverage**:
-  - Comprehensive unit test suite (`tests/unit/`) covering 100% of all Python statements in `app/`.
+- **Multi-SKU Tree Structure**: Parses complex product families and traverses all variant SKUs (sizes, colors, volumes, configurations) into a structured `skus` JSON array.
+- **Multi-Line Excel Spreadsheet**: Formats each SKU on its own row with columns for SKU ID, Variant Name, Price, GTIN, UPC, EAN, MPN, VPN, ASIN, UNSPSC, HS Code, Technical Attributes, and ID Verification Status.
+- **Metadata Retention**: Preserves confidence score (`confidence_score`), ISO timestamp (`timestamp`), and data source origins (`data_sources`) in both JSON and Excel title headers.
+- **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) for cross-session facts and preferences persistence.
+- **100% Test Coverage**: Comprehensive unit test suite (`tests/unit/`) covering 100% of all Python statements in `app/`.
 
 ---
 
 ## 3. Serving & Deployment
 
-- **Local Execution**: Ran and verified locally via `uv run adk run app`.
+- **Local Execution**: Tested locally via `uv run adk run app` and live dev UI `http://localhost:8000/dev-ui/?app=app`.
 - **Deployment**: Deployed on Vertex AI Agent Runtime:
   - **Project**: `qwiklabs-gcp-03-ef713aa8c2c9`
   - **Region**: `us-central1`

@@ -1,11 +1,11 @@
-# Universal Product Intelligence Agent (Multi-Agent System)
+# Universal Product Intelligence Agent (Multi-SKU & Multi-Line Excel System)
 
 [![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/)
 [![ADK](https://img.shields.io/badge/framework-Google_ADK-4285F4.svg)](https://adk.dev/)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](htmlcov/index.html)
 [![Vertex AI Agent Runtime](https://img.shields.io/badge/deployment-Agent_Runtime-34A853.svg)](https://cloud.google.com/vertex-ai)
 
-A multi-stage **Search & Retrieval, Extraction, Validation, and Normalization** multi-agent application built with Google ADK (Agent Development Kit). The system enriches sparse product inputs (VPN/MPN, UPC, or Description) into structured JSON documents, validates mandatory universal product identifiers, and generates formatted Excel spreadsheets (`.xlsx`).
+A multi-stage **Search & Retrieval, Multi-SKU Extraction, Validation, and Normalization** application built with Google ADK (Agent Development Kit). The system enriches sparse product inputs (VPN/MPN, UPC, or Description) into tree-structured JSON documents containing all product variant SKUs, validates mandatory universal identifiers, preserves confidence score and timestamp metadata, and generates styled multi-line Excel spreadsheets (`.xlsx`).
 
 ---
 
@@ -24,17 +24,19 @@ A multi-stage **Search & Retrieval, Extraction, Validation, and Normalization** 
                                    ▼
       ┌────────────────────────────────────────────────────────┐
       │ Sub-Agent 1: Universal Research Agent                  │
-      │  - ReAct search & specification harvesting             │
+      │  - Multi-SKU family search & harvesting                │
       │  - Long-term memory via Vertex AI Memory Bank          │
-      │  - Universal ID resolution (GTIN, UPC, EAN, MPN, etc.)│
-      │  - Generates exhaustive structured JSON payload        │
+      │  - Universal ID resolution per SKU (GTIN, UPC, EAN,    │
+      │    MPN, VPN, ASIN, UNSPSC, HS Code)                    │
+      │  - Generates tree-structured JSON payload (SKUs array) │
       └────────────────────────────┬───────────────────────────┘
                                    │
                                    ▼
       ┌────────────────────────────────────────────────────────┐
       │ Sub-Agent 2: Product Validation & Excel Agent          │
-      │  - Validates presence of mandatory universal IDs      │
-      │  - Generates styled Excel file using openpyxl          │
+      │  - Validates presence of mandatory IDs for all SKUs    │
+      │  - Retains confidence score, timestamp & data sources  │
+      │  - Generates styled multi-line Excel file using openpyxl│
       │  - Returns file path and summary table to user          │
       └────────────────────────────────────────────────────────┘
 ```
@@ -43,41 +45,11 @@ A multi-stage **Search & Retrieval, Extraction, Validation, and Normalization** 
 
 ## 🚀 Key Features
 
-1. **Multi-Agent Orchestration**: Sequential execution pipeline combining a research harvesting agent and an Excel validation/formatting agent.
-2. **Universal Product ID Resolution**: Extracts and validates universally referenceable IDs:
-   - **GTIN** (14-digit)
-   - **UPC** (12-digit)
-   - **EAN** (13-digit)
-   - **MPN / VPN** (Manufacturer / Vendor Part Number)
-   - **ASIN** (Amazon Standard Identification Number)
-   - **UNSPSC** (8-digit taxonomy code)
-   - **HS Code** (Customs classification)
-3. **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) for cross-session facts and preferences persistence.
-4. **Excel Export**: Formats spreadsheets with custom headers, verification tables, and technical specs.
+1. **Multi-SKU Tree Structure**: Captures all variant SKUs (sizes, colors, volumes, configurations) under a single product family hierarchy in JSON.
+2. **Multi-Line Excel Export**: Formats each SKU on its own row in Excel with columns for SKU ID, Variant Name, Price, GTIN, UPC, EAN, MPN, VPN, ASIN, UNSPSC, HS Code, Technical Attributes, and ID Status.
+3. **Metadata & Audit Trail**: Preserves confidence score (`confidence_score`), ISO timestamp (`timestamp`), and source provenance (`data_sources`) in both JSON and Excel output headers.
+4. **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) for cross-session facts and preferences persistence.
 5. **100% Test Coverage**: Fully tested using `pytest` and `pytest-cov` across all Python code in `app/`.
-
----
-
-## 📁 Project Structure
-
-```
-universal-product-intelligence-agent/
-├── app/
-│   ├── agent.py                 # Root Orchestrator (SequentialAgent)
-│   ├── fast_api_app.py          # FastAPI Backend server with A2A support
-│   ├── sub_agents/
-│   │   ├── research_agent.py    # Universal Product Research Sub-Agent
-│   │   └── excel_agent.py       # Product Validation & Excel Sub-Agent
-│   ├── tools/
-│   │   └── excel_tools.py       # Validation and Excel generation tools
-│   └── app_utils/               # Services, typing, and A2A helpers
-├── tests/
-│   ├── unit/                    # Unit tests achieving 100% code coverage
-│   └── integration/             # End-to-end integration tests
-├── project_brief.md             # Complete project design brief
-├── pyproject.toml               # Python dependencies and configuration
-└── walkthrough.md               # Implementation walkthrough artifact
-```
 
 ---
 
@@ -89,7 +61,7 @@ Run the test suite with coverage report:
 uv run pytest --cov=app --cov-report=term-missing
 ```
 
-### Final Test Coverage Output
+### Coverage Report Summary
 ```
 Name                               Stmts   Miss  Cover
 ------------------------------------------------------
@@ -100,27 +72,22 @@ app/app_utils/services.py             38      0   100%
 app/app_utils/typing.py                9      0   100%
 app/fast_api_app.py                   38      0   100%
 app/sub_agents/excel_agent.py          6      0   100%
-app/sub_agents/research_agent.py      17      0   100%
-app/tools/excel_tools.py             108      0   100%
+app/sub_agents/research_agent.py      16      0   100%
+app/tools/excel_tools.py             102      0   100%
 ------------------------------------------------------
-TOTAL                                263      0   100%
+TOTAL                                256      0   100%
 ```
 
 ---
 
-## 🌐 Running Locally
+## 🌐 Running & Testing Locally
 
-Interactive agent execution:
-
-```bash
-uv run adk run app
-```
-
-Launch FastAPI web server with A2A protocol:
+Interactive agent execution UI:
 
 ```bash
-uv run uvicorn app.fast_api_app:app --host 0.0.0.0 --port 8000
+agents-cli playground
 ```
+Open browser at: [http://localhost:8000/dev-ui/?app=app](http://localhost:8000/dev-ui/?app=app)
 
 ---
 

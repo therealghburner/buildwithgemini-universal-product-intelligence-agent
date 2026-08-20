@@ -15,7 +15,74 @@ def test_clean_json_string():
     assert _clean_json_string(markdown_plain) == raw_json
 
 
-def test_validate_and_generate_excel_valid(tmp_path):
+def test_validate_and_generate_excel_multi_sku(tmp_path):
+    multi_sku_data = {
+        "product_family": "CHANEL COCO MADEMOISELLE CRUSH ABSOLU",
+        "brand": "CHANEL",
+        "category": "Beauty & Personal Care > Fragrances",
+        "skus": [
+            {
+                "sku_id": "CHA-50ML",
+                "variant_name": "50ml Spray",
+                "price": "125.00",
+                "currency": "USD",
+                "universal_identifiers": {
+                    "gtin": "03145891165104",
+                    "upc": "3145891165104",
+                    "ean": "3145891165104",
+                    "mpn": "116510",
+                    "vpn": "CHA-116510",
+                    "asin": "B00116510Y"
+                },
+                "attributes": {
+                    "volume": "50ml"
+                }
+            },
+            {
+                "sku_id": "CHA-100ML",
+                "variant_name": "100ml Spray",
+                "price": "165.00",
+                "currency": "USD",
+                "universal_identifiers": {
+                    "gtin": "03145891165203",
+                    "upc": "3145891165203",
+                    "ean": "3145891165203",
+                    "mpn": "116520",
+                    "vpn": "CHA-116520",
+                    "asin": "B00116520X"
+                },
+                "attributes": {
+                    "volume": "100ml"
+                }
+            }
+        ],
+        "metadata": {
+            "confidence_score": 0.98,
+            "timestamp": "2026-08-20T23:38:00Z",
+            "data_sources": ["CHANEL Catalog", "Barcode Registry"]
+        }
+    }
+
+    out_file = "multi_sku_test.xlsx"
+    res = validate_and_generate_excel(json.dumps(multi_sku_data), output_filename=out_file)
+
+    assert res["status"] == "success"
+    assert res["validation_passed"] is True
+    assert res["verified_skus_count"] == 2
+    assert "CHA-50ML" in res["verified_skus"]
+    assert "CHA-100ML" in res["verified_skus"]
+    assert res["metadata"]["confidence_score"] == 0.98
+    assert os.path.exists(res["output_file_path"])
+
+    wb = openpyxl.load_workbook(res["output_file_path"])
+    ws = wb["Multi-SKU Catalog & IDs"]
+    assert ws["B3"].value == "CHANEL COCO MADEMOISELLE CRUSH ABSOLU"
+    assert ws["B4"].value == "CHANEL"
+    assert ws["A11"].value == "CHA-50ML"
+    assert ws["A12"].value == "CHA-100ML"
+
+
+def test_validate_and_generate_excel_single_fallback():
     sample_data = {
         "product_info": {
             "title": "Test Smartphone Ultra",
@@ -27,58 +94,36 @@ def test_validate_and_generate_excel_valid(tmp_path):
         "universal_identifiers": {
             "gtin": "01234567890123",
             "upc": "123456789012",
-            "ean": "1234567890123",
-            "mpn": "TC-ULTRA-01",
-            "vpn": "TC-ULTRA-01",
-            "asin": "B00EXAMPLE",
-            "unspsc": "43191501",
-            "hs_code": "8517.12"
-        },
-        "specifications": {
-            "display": "6.7 inch OLED",
-            "ram": "12GB",
-            "dimensions": {"width": 75, "height": 160}
+            "mpn": "TC-ULTRA-01"
         },
         "metadata": {
             "confidence_score": 0.95
         }
     }
 
-    out_file = "test_output.xlsx"
-    res = validate_and_generate_excel(json.dumps(sample_data), output_filename=out_file)
+    res = validate_and_generate_excel(json.dumps(sample_data))
 
     assert res["status"] == "success"
     assert res["validation_passed"] is True
-    assert len(res["missing_critical_fields"]) == 0
-    assert "gtin" in res["verified_identifiers"]
-    assert os.path.exists(res["output_file_path"])
-
-    # Inspect created workbook
-    wb = openpyxl.load_workbook(res["output_file_path"])
-    assert "Product Overview & IDs" in wb.sheetnames
-    assert "Full Specifications" in wb.sheetnames
-
-    ws_summary = wb["Product Overview & IDs"]
-    assert ws_summary["B3"].value == "Test Smartphone Ultra"
-    assert ws_summary["B4"].value == "TechCorp"
+    assert res["verified_skus_count"] == 1
 
 
-def test_validate_and_generate_excel_missing_fields():
+def test_validate_and_generate_excel_missing_ids():
     sample_data = {
-        "product_info": {
-            "brand": "TechCorp"
-        },
-        "universal_identifiers": {
-            "isbn": "978-3-16-148410-0"
-        }
+        "product_family": "Incomplete Product",
+        "skus": [
+            {
+                "sku_id": "NO-ID-SKU",
+                "universal_identifiers": {}
+            }
+        ]
     }
 
     res = validate_and_generate_excel(json.dumps(sample_data))
 
     assert res["status"] == "success"
     assert res["validation_passed"] is False
-    assert "product_title" in res["missing_critical_fields"]
-    assert any("universal_identifiers" in field for field in res["missing_critical_fields"])
+    assert len(res["missing_critical_fields"]) > 0
 
 
 def test_validate_and_generate_excel_invalid_json():
