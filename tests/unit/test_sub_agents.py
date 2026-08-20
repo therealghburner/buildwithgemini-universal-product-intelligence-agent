@@ -2,8 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from app.sub_agents.research_agent import (
     research_agent,
-    get_weather,
-    get_current_time,
+    search_product_catalog,
     generate_memories_callback,
 )
 from app.sub_agents.excel_agent import excel_agent
@@ -15,17 +14,13 @@ def test_research_agent_config():
     assert len(research_agent.tools) == 3
 
 
-def test_get_weather():
-    sf_weather = get_weather("What is the weather in SF?")
-    assert "foggy" in sf_weather.lower()
+def test_search_product_catalog():
+    res_coco = search_product_catalog("COCO MADEMOISELLE CRUSH ABSOLU")
+    assert "CHANEL" in res_coco
+    assert "3145891165203" in res_coco
 
-    ny_weather = get_weather("What is the weather in New York?")
-    assert "sunny" in ny_weather.lower()
-
-
-def test_get_current_time():
-    res = get_current_time("Tokyo")
-    assert "The current time for query Tokyo" in res
+    res_gen = search_product_catalog("Generic Phone")
+    assert "Brand Master" in res_gen
 
 
 @pytest.mark.asyncio
