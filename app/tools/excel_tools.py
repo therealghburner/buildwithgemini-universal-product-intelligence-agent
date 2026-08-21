@@ -18,6 +18,15 @@ def _clean_json_string(json_str: str) -> str:
     return json_str.strip()
 
 
+def _sanitize_filename(filename: str) -> str:
+    """Sanitizes filename by removing quotes, spaces, and invalid characters."""
+    clean = re.sub(r'[^\w\.-]', '_', filename)
+    clean = re.sub(r'_+', '_', clean).strip('_')
+    if not clean.endswith('.xlsx'):
+        clean += '.xlsx'
+    return clean or "product_spec.xlsx"
+
+
 def validate_and_generate_excel(
     product_data_json: str,
     output_filename: str = "product_spec.xlsx",
@@ -33,12 +42,14 @@ def validate_and_generate_excel(
         A dictionary with validation status, missing fields, verified SKUs, and output file path.
     """
     cleaned_json = _clean_json_string(product_data_json)
+    safe_filename = _sanitize_filename(output_filename)
+
     try:
         data = json.loads(cleaned_json)
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to parse product JSON: {str(e)}",
+            "message": f"Failed to parse product JSON: {str(e)}. Please ensure valid product JSON is provided.",
             "validation_passed": False,
         }
 
@@ -51,6 +62,14 @@ def validate_and_generate_excel(
     timestamp = metadata.get("timestamp", "N/A")
     data_sources = metadata.get("data_sources", [])
     data_sources_str = ", ".join(data_sources) if isinstance(data_sources, list) else str(data_sources)
+
+    # Check for low confidence score (< 0.70)
+    if isinstance(confidence_score, (int, float)) and float(confidence_score) < 0.70:
+        return {
+            "status": "warning",
+            "validation_passed": False,
+            "message": f"Product search confidence score ({confidence_score}) is below the required 0.70 threshold. Unable to generate Excel spec sheet for low confidence data.",
+        }
 
     # Extract SKUs list (handle multi-SKU array or single product fallback)
     raw_skus = data.get("skus")
@@ -193,7 +212,7 @@ def validate_and_generate_excel(
     # Save output file
     output_dir = os.path.join(os.getcwd(), "output")
     os.makedirs(output_dir, exist_ok=True)
-    file_path = os.path.join(output_dir, output_filename)
+    file_path = os.path.join(output_dir, safe_filename)
     wb.save(file_path)
 
     return {

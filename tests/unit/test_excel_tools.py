@@ -2,7 +2,7 @@ import json
 import os
 import openpyxl
 import pytest
-from app.tools.excel_tools import _clean_json_string, validate_and_generate_excel
+from app.tools.excel_tools import _clean_json_string, _sanitize_filename, validate_and_generate_excel
 
 
 def test_clean_json_string():
@@ -13,6 +13,11 @@ def test_clean_json_string():
     assert _clean_json_string(raw_json) == raw_json
     assert _clean_json_string(markdown_json) == raw_json
     assert _clean_json_string(markdown_plain) == raw_json
+
+
+def test_sanitize_filename():
+    assert _sanitize_filename('Tecovas The Dean Western Boot.xlsx') == 'Tecovas_The_Dean_Western_Boot.xlsx'
+    assert _sanitize_filename('my_file') == 'my_file.xlsx'
 
 
 def test_validate_and_generate_excel_multi_sku(tmp_path):
@@ -80,6 +85,30 @@ def test_validate_and_generate_excel_multi_sku(tmp_path):
     assert ws["B4"].value == "CHANEL"
     assert ws["A11"].value == "CHA-50ML"
     assert ws["A12"].value == "CHA-100ML"
+
+
+def test_validate_and_generate_excel_low_confidence():
+    low_conf_data = {
+        "product_family": "Uncertain Product",
+        "metadata": {
+            "confidence_score": 0.45
+        }
+    }
+    res = validate_and_generate_excel(json.dumps(low_conf_data))
+    assert res["status"] == "warning"
+    assert res["validation_passed"] is False
+    assert "below the required 0.70 threshold" in res["message"]
+
+
+def test_validate_and_generate_excel_invalid_confidence_type():
+    invalid_conf_data = {
+        "product_family": "Invalid Conf Type",
+        "metadata": {
+            "confidence_score": "not_a_number"
+        }
+    }
+    res = validate_and_generate_excel(json.dumps(invalid_conf_data))
+    assert res["status"] == "success"
 
 
 def test_validate_and_generate_excel_single_fallback():

@@ -1,59 +1,50 @@
-# Project Brief: Universal Product Intelligence Agent (Multi-SKU Tree Harvester & Multi-Line Excel Validator)
+# Universal Product Intelligence & Multi-SKU Excel Agent System
 
-## Overview
-A multi-agent **Search & Retrieval, Extraction, Validation, and Normalization** system built with the Google Agent Development Kit (ADK). The system receives sparse inputs (VPN/MPN, UPC, or product description), scours online databases and web sources, generates an exhaustive structured JSON document with a tree structure traversing all discovered product SKUs/variants, validates mandatory product IDs across all SKUs, retains metadata (confidence scores, timestamps, data sources), and automatically populates a styled multi-line Excel spreadsheet (`.xlsx`) output.
+## Executive Overview
+An autonomous multi-agent platform powered by Google ADK (Agent Development Kit), Gemini 2.5, Vertex AI Memory Bank, and OpenPyXL. The system ingests sparse product queries (descriptions, VPNs, MPNs, or barcode numbers), performs domain-aware catalog research, constructs multi-SKU tree JSON specifications, enforces confidence threshold guardrail validation, and outputs structured multi-line Excel spreadsheets.
 
 ---
 
-## 1. Multi-Agent System Architecture
+## System Architecture
 
-```
-                                [User Input]
-                      (VPN / UPC / Product Description)
-                                     │
-                                     ▼
-                   ┌──────────────────────────────────┐
-                   │        Root Orchestrator         │
-                   │        (SequentialAgent)         │
-                   └────────────────┬─────────────────┘
-                                    │
-                                    ▼
-       ┌────────────────────────────────────────────────────────┐
-       │ Step 1: Universal Research Agent                       │
-       │  - ReAct search & multi-SKU family harvesting           │
-       │  - Cross-session memory via Vertex AI Memory Bank      │
-       │  - Universal ID resolution per SKU (GTIN, UPC, EAN,    │
-       │    MPN, VPN, ASIN, UNSPSC, HS Code)                    │
-       │  - Outputs tree-structured JSON (family + SKUs array) │
-       └────────────────────────────┬───────────────────────────┘
-                                    │
-                                    ▼
-       ┌────────────────────────────────────────────────────────┐
-       │ Step 2: Product Validation & Excel Agent               │
-       │  - Validates presence of mandatory IDs for all SKUs    │
-       │  - Retains confidence scores, timestamps & metadata    │
-       │  - Generates styled multi-line Excel file (.xlsx)      │
-       │  - Returns file path and summary table to user         │
-       └────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    User["User Query / Prompt"] --> Orchestrator["Universal Product Intelligence Agent (Sequential Workflow)"]
+    Orchestrator --> ResearchAgent["1. Research Agent (E-Commerce Spec Harvester)"]
+    ResearchAgent --> SearchTool["search_product_catalog Tool"]
+    ResearchAgent --> MemoryTool["PreloadMemoryTool (Vertex AI Memory Bank)"]
+    ResearchAgent -- "Multi-SKU Tree JSON / Low-Confidence Message" --> ExcelAgent["2. Excel Agent (Quality & Excel Generator)"]
+    ExcelAgent --> ExcelTool["validate_and_generate_excel Tool"]
+    ExcelTool -- "100% ID Verified Multi-Line .xlsx File" --> Output["Formatted Excel Spreadsheet"]
 ```
 
 ---
 
-## 2. Key Capabilities & Multi-SKU Features
+## Core Features & Safety Guardrails
 
-- **Multi-SKU Tree Structure**: Parses complex product families and traverses all variant SKUs (sizes, colors, volumes, configurations) into a structured `skus` JSON array.
-- **Multi-Line Excel Spreadsheet**: Formats each SKU on its own row with columns for SKU ID, Variant Name, Price, GTIN, UPC, EAN, MPN, VPN, ASIN, UNSPSC, HS Code, Technical Attributes, and ID Verification Status.
-- **Metadata Retention**: Preserves confidence score (`confidence_score`), ISO timestamp (`timestamp`), and data source origins (`data_sources`) in both JSON and Excel title headers.
-- **Vertex AI Memory Bank**: Integrates with Vertex AI Memory Bank (`4920386552309219328`) for cross-session facts and preferences persistence.
-- **100% Test Coverage**: Comprehensive unit test suite (`tests/unit/`) covering 100% of all Python statements in `app/`.
+1. **Domain-Aware Multi-SKU Resolution**:
+   - **Footwear & Apparel**: Dynamically resolves footwear taxonomies, leather attributes, UNSPSC `53111501`, and HS Code `6403.51.1110`.
+   - **Fragrances & Beauty**: Dynamically resolves beauty taxonomies, volume sizes, UNSPSC `53131621`, and HS Code `3303.00.1000`.
+   - **Electronics & Consumer Goods**: Dynamically resolves tech specifications, capacity, UNSPSC `43211509`, and HS Code `8471.30.0100`.
+
+2. **Low Confidence & Query Mismatch Safety Guardrail**:
+   - Requires confidence score $\ge 0.70$.
+   - If confidence is too low or query keywords do not match product family results, the agent stops and returns a clear warning:
+     > *"Unable to find reliable information for query. Search confidence score is too low (< 0.70). Additional details (Brand, UPC, GTIN, or exact Part Number) are required."*
+
+3. **Multi-SKU Tree JSON Harvester**:
+   - Collects top-level product family information along with an array of individual SKU variants, pricing, universal identifiers (GTIN, UPC, EAN, MPN, VPN, ASIN, UNSPSC, HS Code), and technical attributes.
+
+4. **Multi-Line Excel Spreadsheet Generation**:
+   - Formats every SKU into a styled row with header blocks, metadata retention, filename sanitization, and ID validation status badges.
+
+5. **100% Test Coverage & Automated Quality Assurance**:
+   - Every module verified with `pytest --cov=app` reaching **100% total statement coverage**.
 
 ---
 
-## 3. Serving & Deployment
-
-- **Local Execution**: Tested locally via `uv run adk run app` and live dev UI `http://localhost:8000/dev-ui/?app=app`.
-- **Deployment**: Deployed on Vertex AI Agent Runtime:
-  - **Project**: `qwiklabs-gcp-03-ef713aa8c2c9`
-  - **Region**: `us-central1`
-  - **Reasoning Engine ID**: `projects/562681496404/locations/us-central1/reasoningEngines/4445256791621632000`
-- **GitHub Repository**: [`therealghburner/buildwithgemini-universal-product-intelligence-agent`](https://github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent)
+## Repository & Deployment Info
+- **GitHub Repository**: [https://github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent](https://github.com/therealghburner/buildwithgemini-universal-product-intelligence-agent)
+- **GCP Project**: `qwiklabs-gcp-03-ef713aa8c2c9`
+- **Vertex AI Agent Runtime ID**: `projects/562681496404/locations/us-central1/reasoningEngines/4445256791621632000`
+- **Local Dev UI**: `http://localhost:8000/dev-ui/?app=app`

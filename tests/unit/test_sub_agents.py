@@ -32,9 +32,15 @@ def test_search_product_catalog_domains():
     assert "Electronics & Consumer Goods" in res_tech
     assert "128GB" in res_tech
 
-    # Test General fallback domain
-    res_gen = search_product_catalog("Ceramic Coffee Mug")
-    assert "General Merchandise" in res_gen
+    # Test General Merchandise Fallback
+    res_general = search_product_catalog("Product Description: 'Ceramic Coffee Mug'")
+    assert "Ceramic Coffee Mug" in res_general
+    assert "Universal Global Brand" in res_general
+
+    # Test Low Confidence / Insufficient Data
+    res_invalid = search_product_catalog("unknown_random_string_xyz999")
+    assert "INSUFFICIENT_DATA" in res_invalid
+    assert "confidence score is too low" in res_invalid
 
 
 @pytest.mark.asyncio
